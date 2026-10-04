@@ -1,0 +1,693 @@
+{
+  "name": "WhatsApp - Distributor Ordering",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1ffb8fd2-043d-4c0c-a57f-fd8da6490ffe",
+      "name": "Meta Verify (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        -16
+      ],
+      "webhookId": "ff881e9b-c790-4ec0-8f63-1d4d58e47ea6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query[\"hub.mode\"] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.query[\"hub.verify_token\"] }}",
+              "rightValue": "test-token",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8ed1311b-7367-4da9-8349-b83a74cc4860",
+      "name": "Token Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        64,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query[\"hub.challenge\"] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a8bfdf56-776a-49c4-afc5-e7260c091935",
+      "name": "Return Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        288,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "67b227e4-0b2c-47c8-8a27-0d6cf671dace",
+      "name": "Reject Token",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        288,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "015243a4-d2ef-42fa-8614-39a82230e47c",
+      "name": "WhatsApp Messages (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        528
+      ],
+      "webhookId": "f2a41591-ce84-41fa-aa62-298f4e355062"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "92fa3453-04f8-4474-96d4-469a3dfc4ef7",
+      "name": "Acknowledge Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        64,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body || $json.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.interactive?.button_reply?.id || $json.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.interactive?.list_reply?.id || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c58a7e31-88a2-4846-9591-2639b38e200d",
+      "name": "Is Incoming Message?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "from",
+              "name": "from",
+              "type": "string",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].from }}"
+            },
+            {
+              "id": "text",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].text?.body || $json.body.entry[0].changes[0].value.messages[0].interactive?.button_reply?.title || $json.body.entry[0].changes[0].value.messages[0].interactive?.list_reply?.title || '' }}"
+            },
+            {
+              "id": "replyId",
+              "name": "replyId",
+              "type": "string",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].interactive?.button_reply?.id || $json.body.entry[0].changes[0].value.messages[0].interactive?.list_reply?.id || '' }}"
+            },
+            {
+              "id": "messageId",
+              "name": "messageId",
+              "type": "string",
+              "value": "={{ $json.body.entry[0].changes[0].value.messages[0].id }}"
+            },
+            {
+              "id": "phoneNumberId",
+              "name": "phoneNumberId",
+              "type": "string",
+              "value": "={{ $json.body.entry[0].changes[0].value.metadata.phone_number_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "caa20510-77ce-46e1-94e2-3854eee7a4b7",
+      "name": "Extract Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.id AS shopkeeper_id, s.shop_name, s.owner_name, s.address, s.distributor_id,\n  d.distributor_name, d.whatsapp_number AS distributor_whatsapp,\n  ws.state, ws.cart, ws.last_message_id, ws.current_product_id\nFROM (SELECT $1::text AS phone) x\nLEFT JOIN shopkeepers s ON s.whatsapp_number = x.phone AND s.status = 'active'\nLEFT JOIN distributors d ON d.id = s.distributor_id\nLEFT JOIN LATERAL (SELECT state, cart, last_message_id, current_product_id FROM whatsapp_sessions w WHERE w.shopkeeper_id = s.id ORDER BY w.updated_at DESC LIMIT 1) ws ON true\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.from ] }}",
+          "largeNumbersOutput": "numbers"
+        }
+      },
+      "id": "21895ea1-a37a-450c-ad07-b8fd200abbe5",
+      "name": "Load Shopkeeper & Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        736,
+        528
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YgDroIGVpzWcCiAk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Works out what the shopkeeper wants (from a tapped list/button or typed text)\n// and which products to fetch.\nconst PAGE = 7;\nconst msg = $('Extract Message').first().json;\nconst ctx = $input.first().json;\nconst raw = String(msg.text || '').trim().slice(0, 200);\nconst text = raw.toLowerCase().replace(/\\s+/g, ' ').replace(/[.!]+$/, '');\nconst rid = String(msg.replyId || '');\nconst state = ctx.state || 'IDLE';\n\nlet items = [];\nlet view = { mode: 'categories', category: '', q: '', page: 1, total: 0, catPage: 1, catPages: 1 };\nconst stored = ctx.cart;\nif (Array.isArray(stored)) {\n  items = stored;\n} else if (stored && typeof stored === 'object') {\n  items = Array.isArray(stored.items) ? stored.items : [];\n  if (stored.view && typeof stored.view === 'object') view = Object.assign(view, stored.view);\n}\nconst currentProduct = ctx.current_product_id ? String(ctx.current_product_id) : '';\nconst lastPage = Math.max(1, Math.ceil((Number(view.total) || 0) / PAGE));\n\nconst r = { cmd: 'help', mode: 'categories', category: '', q: '', page: 1, catPage: 1, productId: '', qty: null, editPage: 1, reset: false, note: '' };\n\nconst showView = (page, catPage) => {\n  r.cmd = 'list';\n  r.mode = view.mode || 'categories';\n  r.category = view.category || '';\n  r.q = view.q || '';\n  r.page = Math.min(Math.max(1, page || 1), lastPage);\n  r.catPage = Math.min(Math.max(1, catPage || view.catPage || 1), Math.max(1, view.catPages || 1));\n};\nconst categories = (catPage) => { r.cmd = 'list'; r.mode = 'categories'; r.catPage = Math.max(1, catPage || 1); };\n\nconst startWords = ['order', 'hi', 'hello', 'hey', 'menu', 'start', 'products', 'list', 'categories', 'category', 'all'];\nconst newOrderWords = ['new order', 'restart'];\nconst cancelWords = ['cancel', 'stop'];\nconst nextWords = ['next', 'more', 'next page', '>'];\nconst backWords = ['back', 'prev', 'previous', 'previous page', '<'];\nconst cartWords = ['cart', 'view cart', 'my cart', 'done', 'checkout', 'review', 'finish'];\nconst confirmWords = ['confirm', 'yes', 'ok', 'place order', 'confirm order'];\n\nif (!ctx.shopkeeper_id) {\n  r.cmd = 'unregistered';\n} else if (ctx.last_message_id && ctx.last_message_id === msg.messageId) {\n  r.cmd = 'skip';\n} else if (rid) {\n  // ids look like kind|a|b\n  const parts = rid.split('|');\n  const kind = parts[0];\n  const a = parts[1] || '';\n  const rest = parts.slice(2).join('|');\n  if (kind === 'menu') categories(parseInt(a, 10) || 1);\n  else if (kind === 'cat') { r.cmd = 'list'; r.mode = 'category'; r.page = parseInt(a, 10) || 1; r.category = rest; }\n  else if (kind === 'search') { r.cmd = 'list'; r.mode = 'search'; r.page = parseInt(a, 10) || 1; r.q = rest; }\n  else if (kind === 'prod') { r.cmd = 'product'; r.productId = a; }\n  else if (kind === 'qty') { r.cmd = 'setqty'; r.productId = a; r.qty = parseFloat(rest); }\n  else if (kind === 'back') showView(view.page);\n  else if (kind === 'cart') r.cmd = 'cart';\n  else if (kind === 'edit') { r.cmd = 'editcart'; r.editPage = parseInt(a, 10) || 1; }\n  else if (kind === 'confirm') r.cmd = state === 'REVIEWING_ORDER' ? 'confirm' : 'cart';\n  else if (kind === 'cancel') r.cmd = 'cancel';\n  else categories(1);\n} else if (cancelWords.includes(text)) {\n  r.cmd = 'cancel';\n} else if (newOrderWords.includes(text)) {\n  categories(1); r.reset = true;\n} else if (startWords.includes(text)) {\n  categories(1);\n  if (state === 'IDLE') r.reset = true;\n} else if (state === 'IDLE') {\n  r.cmd = 'help';\n} else if (state === 'ENTERING_QUANTITY' && currentProduct && /^\\d+(\\.\\d+)?$/.test(text)) {\n  r.cmd = 'setqty'; r.productId = currentProduct; r.qty = parseFloat(text);\n} else if (state === 'ENTERING_QUANTITY' && currentProduct && ['remove', 'delete'].includes(text)) {\n  r.cmd = 'setqty'; r.productId = currentProduct; r.qty = 0;\n} else if (nextWords.includes(text)) {\n  if (view.mode === 'categories') showView(1, (view.catPage || 1) + 1);\n  else { if ((view.page || 1) >= lastPage) r.note = 'You are already on the last page.'; showView((view.page || 1) + 1); }\n} else if (backWords.includes(text)) {\n  if (state === 'ENTERING_QUANTITY' || state === 'REVIEWING_ORDER') showView(view.page);\n  else if (view.mode === 'categories') showView(1, (view.catPage || 1) - 1);\n  else if ((view.page || 1) <= 1) categories(view.catPage || 1);\n  else showView((view.page || 1) - 1);\n} else if (cartWords.includes(text)) {\n  r.cmd = 'cart';\n} else if (confirmWords.includes(text)) {\n  r.cmd = state === 'REVIEWING_ORDER' ? 'confirm' : 'cart';\n} else if (/^\\d+(\\.\\d+)?$/.test(text)) {\n  r.cmd = 'list'; r.mode = view.mode || 'categories'; r.category = view.category || ''; r.q = view.q || ''; r.page = view.page || 1; r.catPage = view.catPage || 1;\n  r.note = 'To set a quantity, first tap a product from the list.';\n} else {\n  r.cmd = 'list'; r.mode = 'search'; r.page = 1;\n  r.q = raw.replace(/^(search|find)\\s+/i, '').replace(/[%_\\\\|]/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 40);\n}\n\nif (r.reset) items = [];\n\nconst listMode = r.cmd === 'list' && r.mode !== 'categories';\nreturn [{ json: Object.assign(r, {\n  limit: PAGE,\n  offset: listMode ? (r.page - 1) * PAGE : 0,\n  qCategory: listMode && r.mode === 'category' ? r.category : '',\n  qSearch: listMode && r.mode === 'search' ? r.q : '',\n  state, items, view, currentProduct,\n}) }];\n"
+      },
+      "id": "eca01de5-1166-4b8a-b731-741a18ae25b8",
+      "name": "Parse Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH sk AS (SELECT $1::bigint AS id),\npriced AS (\n  SELECT p.id, p.product_name, p.product_code, p.category, p.unit, p.description, p.image_url,\n         COALESCE(sp.price, p.default_price) AS price\n  FROM products p\n  CROSS JOIN sk\n  LEFT JOIN shopkeeper_prices sp ON sp.product_id = p.id AND sp.shopkeeper_id = sk.id\n  WHERE p.active AND sk.id IS NOT NULL\n),\nf AS (\n  SELECT * FROM priced\n  WHERE $7::boolean\n    AND ($2::text = '' OR category = $2::text)\n    AND ($3::text = '' OR product_name ILIKE '%' || $3::text || '%' OR product_code ILIKE '%' || $3::text || '%'\n         OR category ILIKE '%' || $3::text || '%' OR description ILIKE '%' || $3::text || '%')\n),\nlim AS (\n  SELECT LEAST(GREATEST($4::int, 1), 10) AS l, (SELECT count(*) FROM f)::int AS n\n),\noff AS (\n  SELECT GREATEST(LEAST(GREATEST($5::int, 0), ((n - 1) / l) * l), 0) AS o FROM lim\n)\nSELECT\n  (SELECT n FROM lim) AS total,\n  (SELECT o FROM off) AS page_offset,\n  (SELECT COALESCE(json_agg(row_to_json(x) ORDER BY x.name, x.id), '[]'::json)\n     FROM (SELECT id, product_name AS name, unit, price, description, category FROM f\n           ORDER BY product_name, id LIMIT (SELECT l FROM lim) OFFSET (SELECT o FROM off)) x) AS products,\n  (SELECT COALESCE(json_agg(json_build_object('name', category, 'count', n) ORDER BY category), '[]'::json)\n     FROM (SELECT category, count(*)::int AS n FROM priced WHERE category IS NOT NULL AND category <> '' GROUP BY category LIMIT 60) c) AS categories,\n  (SELECT row_to_json(y)\n     FROM (SELECT id, product_name AS name, product_code AS code, unit, price, description, category, image_url\n           FROM priced WHERE id = NULLIF($6::text, '')::bigint) y) AS product;",
+        "options": {
+          "queryReplacement": "={{ [ $('Load Shopkeeper & Session').item.json.shopkeeper_id, $json.qCategory, $json.qSearch, $json.limit, $json.offset, $json.productId || '', $json.cmd === 'list' && $json.mode !== 'categories' ] }}",
+          "largeNumbersOutput": "numbers"
+        }
+      },
+      "id": "26dfe6b5-cc64-4a67-8e1c-a3a81e668b11",
+      "name": "Fetch Products",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1184,
+        528
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YgDroIGVpzWcCiAk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Builds the WhatsApp Cloud API message (tappable list, product card with image, or buttons).\nconst PAGE = 7;\nconst MAX_CART_LINES = 50;\nconst MAX_QTY = 10000;\n\nconst msg = $('Extract Message').first().json;\nconst ctx = $('Load Shopkeeper & Session').first().json;\nconst it = $('Parse Intent').first().json;\nconst res = $input.first().json || {};\n\nconst products = Array.isArray(res.products) ? res.products : [];\nconst cats = Array.isArray(res.categories) ? res.categories : [];\nconst total = Number(res.total || 0);\nconst product = res.product && res.product.id ? res.product : null;\nconst listPageNo = res.page_offset != null ? Math.floor(Number(res.page_offset) / PAGE) + 1 : null;\n\nconst money = (n) => 'Rs. ' + Number(n || 0).toFixed(Number(n) % 1 ? 2 : 0);\nconst round2 = (n) => Math.round(n * 100) / 100;\nconst cut = (s, n) => { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : s; };\nconst name = ctx.owner_name || ctx.shop_name || '';\n\nlet items = Array.isArray(it.items) ? it.items.slice() : [];\nlet view = Object.assign({ mode: 'categories', category: '', q: '', page: 1, total: 0, catPage: 1, catPages: 1 }, it.view || {});\nlet state = it.state || 'IDLE';\nlet currentProductId = null;\n\nconst out = {\n  action: 'reply', reply: '', outMessage: null, state: state, sessionCart: null, currentProductId: null,\n  orderItems: [], total: 0, invoiceBody: '',\n  shopkeeperId: ctx.shopkeeper_id || null, distributorId: ctx.distributor_id || null,\n  ownerName: ctx.owner_name || '', shopName: ctx.shop_name || '',\n  distributorName: ctx.distributor_name || 'your distributor',\n  distributorWhatsapp: ctx.distributor_whatsapp ? String(ctx.distributor_whatsapp) : '',\n  from: msg.from, phoneNumberId: msg.phoneNumberId, messageId: msg.messageId,\n};\n\nconst cartTotal = () => round2(items.reduce((s, i) => s + Number(i.line_total || 0), 0));\nconst cartLine = () => items.length ? '🛒 Cart: ' + items.length + ' item(s) · ' + money(cartTotal()) : '🛒 Cart is empty';\nconst inCart = (id) => items.find((i) => String(i.product_id) === String(id));\n\n// ---- message builders (WhatsApp limits: body 1024, row title 24, row desc 72, button 20, max 10 rows / 3 buttons)\nconst base = () => ({ messaging_product: 'whatsapp', recipient_type: 'individual', to: msg.from });\nconst text = (body) => Object.assign(base(), { type: 'text', text: { preview_url: false, body: cut(body, 4000) } });\nconst list = (header, body, button, rows, footer) => Object.assign(base(), {\n  type: 'interactive',\n  interactive: {\n    type: 'list',\n    header: { type: 'text', text: cut(header, 60) },\n    body: { text: cut(body, 1024) },\n    footer: { text: cut(footer || 'Type a product name to search', 60) },\n    action: { button: cut(button, 20), sections: [{ title: cut(header, 24), rows: rows.slice(0, 10).map((r) => ({ id: cut(r.id, 200), title: cut(r.title, 24), description: cut(r.description || '', 72) })) }] },\n  },\n});\nconst buttons = (body, btns, imageUrl, footer) => {\n  const m = Object.assign(base(), {\n    type: 'interactive',\n    interactive: {\n      type: 'button',\n      body: { text: cut(body, 1024) },\n      action: { buttons: btns.slice(0, 3).map((b) => ({ type: 'reply', reply: { id: cut(b.id, 256), title: cut(b.title, 20) } })) },\n    },\n  });\n  if (imageUrl) m.interactive.header = { type: 'image', image: { link: imageUrl } };\n  if (footer) m.interactive.footer = { text: cut(footer, 60) };\n  return m;\n};\n\n// ---- screens\nconst categoriesScreen = (prefix) => {\n  state = cats.length ? 'SELECTING_PRODUCT' : 'IDLE';\n  if (!cats.length) return text('Sorry, no products are available right now. Please try again later.');\n  const cartRow = items.length ? 1 : 0;\n  const capacity = 10 - cartRow;\n  const perPage = cats.length <= capacity ? capacity : 7;\n  const catPages = Math.max(1, Math.ceil(cats.length / perPage));\n  const catPage = Math.min(Math.max(1, it.catPage || 1), catPages);\n  view = Object.assign(view, { mode: 'categories', category: '', q: '', page: 1, total: 0, catPage: catPage, catPages: catPages });\n  const rows = cats.slice((catPage - 1) * perPage, catPage * perPage)\n    .map((c) => ({ id: 'cat|1|' + c.name, title: c.name, description: c.count + ' products' }));\n  if (catPage < catPages) rows.push({ id: 'menu|' + (catPage + 1), title: '➡️ More categories', description: 'Page ' + (catPage + 1) + ' of ' + catPages });\n  if (catPage > 1) rows.push({ id: 'menu|' + (catPage - 1), title: '⬅️ Previous categories', description: '' });\n  if (cartRow) rows.push({ id: 'cart', title: '🛒 View cart', description: items.length + ' item(s) · ' + money(cartTotal()) });\n  const body = (prefix ? prefix + '\\n\\n' : '') + '👋 Hello ' + name + '!\\n\\nTap *Browse* to pick a category, or just type a product name (e.g. _maggi_, _atta_) to search.' + (items.length ? '\\n\\n' + cartLine() : '');\n  return list('Shop by category', body, 'Browse', rows);\n};\n\nconst productListScreen = (prefix) => {\n  const label = it.mode === 'search' ? 'Search: ' + it.q : it.category;\n  if (total === 0) {\n    state = 'SELECTING_PRODUCT';\n    return buttons((prefix ? prefix + '\\n\\n' : '') + 'No products found for \"' + (it.q || it.category) + '\". Try another name, or browse categories.',\n      [{ id: 'menu|1', title: '📂 Categories' }].concat(items.length ? [{ id: 'cart', title: '🛒 View cart' }] : []));\n  }\n  const pages = Math.max(1, Math.ceil(total / PAGE));\n  const page = Math.min(Math.max(1, listPageNo || it.page || 1), pages);\n  state = 'SELECTING_PRODUCT';\n  view = Object.assign(view, { mode: it.mode, category: it.category || '', q: it.q || '', page: page, total: total });\n  const key = it.mode === 'search' ? 'search|' : 'cat|';\n  const val = it.mode === 'search' ? it.q : it.category;\n  const rows = products.map((p) => {\n    const c = inCart(p.id);\n    return { id: 'prod|' + p.id, title: p.name, description: money(p.price) + '/' + (p.unit || 'Piece') + (c ? ' · ✅ ' + c.qty + ' in cart' : (p.description ? ' · ' + p.description : '')) };\n  });\n  if (page < pages) rows.push({ id: key + (page + 1) + '|' + val, title: '➡️ Next page', description: 'Page ' + (page + 1) + ' of ' + pages });\n  if (page > 1) rows.push({ id: key + (page - 1) + '|' + val, title: '⬅️ Previous page', description: '' });\n  else rows.push({ id: 'menu|' + (view.catPage || 1), title: '📂 All categories', description: '' });\n  if (items.length) rows.push({ id: 'cart', title: '🛒 View cart', description: items.length + ' item(s) · ' + money(cartTotal()) });\n  const body = (prefix ? prefix + '\\n\\n' : '') + '*' + label + '* — ' + total + ' products (page ' + page + ' of ' + pages + ')\\n\\nTap *View products* and choose an item to see its photo and add it.' + (items.length ? '\\n\\n' + cartLine() : '');\n  return list(cut(label, 60), body, 'View products', rows);\n};\n\nconst productScreen = () => {\n  if (!product) { state = 'SELECTING_PRODUCT'; return text('Sorry, that product is no longer available. Send ORDER to browse again.'); }\n  state = 'ENTERING_QUANTITY';\n  currentProductId = product.id;\n  const c = inCart(product.id);\n  const body = '*' + product.name + '*\\n' + (product.description ? product.description + '\\n' : '') +\n    '\\n💰 ' + money(product.price) + ' per ' + (product.unit || 'Piece') +\n    (c ? '\\n✅ In cart: ' + c.qty + ' (' + money(c.line_total) + ')' : '') +\n    '\\n\\nTap a quantity, or *type any number* (e.g. 24).';\n  const btns = c\n    ? [{ id: 'qty|' + product.id + '|6', title: 'Set 6' }, { id: 'qty|' + product.id + '|12', title: 'Set 12' }, { id: 'qty|' + product.id + '|0', title: '🗑 Remove' }]\n    : [{ id: 'qty|' + product.id + '|1', title: 'Add 1' }, { id: 'qty|' + product.id + '|6', title: 'Add 6' }, { id: 'qty|' + product.id + '|12', title: 'Add 12' }];\n  return buttons(body, btns, product.image_url || '', 'Type BACK for the list · CART to review');\n};\n\nconst cartScreen = (prefix) => {\n  if (!items.length) {\n    state = 'SELECTING_PRODUCT';\n    return buttons((prefix ? prefix + '\\n\\n' : '') + '🛒 Your cart is empty.', [{ id: 'menu|1', title: '📂 Categories' }]);\n  }\n  state = 'REVIEWING_ORDER';\n  const lines = items.map((i, n) => (n + 1) + '. ' + i.name + '\\n    ' + i.qty + ' × ' + money(i.unit_price) + ' = *' + money(i.line_total) + '*');\n  let shown = lines.join('\\n');\n  if (shown.length > 800) {\n    let acc = ''; let k = 0;\n    while (k < lines.length && (acc + lines[k]).length < 760) { acc += lines[k] + '\\n'; k++; }\n    shown = acc + '…and ' + (lines.length - k) + ' more item(s)';\n  }\n  const body = (prefix ? prefix + '\\n\\n' : '') + '🧾 *Your order*\\n\\n' + shown + '\\n\\n*Total: ' + money(cartTotal()) + '* (' + items.length + ' items)';\n  return buttons(body, [{ id: 'confirm', title: '✅ Confirm order' }, { id: 'edit|1', title: '✏️ Edit cart' }, { id: 'back', title: '➕ Add more' }], '', 'Type CANCEL to discard this order');\n};\n\nconst editCartScreen = () => {\n  if (!items.length) return cartScreen();\n  state = 'REVIEWING_ORDER';\n  const pages = Math.max(1, Math.ceil(items.length / 8));\n  const page = Math.min(Math.max(1, it.editPage || 1), pages);\n  const rows = items.slice((page - 1) * 8, page * 8).map((i) => ({ id: 'prod|' + i.product_id, title: i.name, description: i.qty + ' × ' + money(i.unit_price) + ' = ' + money(i.line_total) }));\n  if (page < pages) rows.push({ id: 'edit|' + (page + 1), title: '➡️ More items', description: '' });\n  rows.push({ id: 'cart', title: '🧾 Back to order', description: 'Total ' + money(cartTotal()) });\n  return list('Edit cart', 'Tap an item to change its quantity or remove it.', 'Choose item', rows, 'Page ' + page + ' of ' + pages);\n};\n\n// ---- actions\nswitch (it.cmd) {\n  case 'unregistered':\n    out.outMessage = text('Sorry, this number is not registered with us. Please contact your distributor to get access.');\n    break;\n  case 'skip':\n    out.action = 'skip';\n    break;\n  case 'cancel':\n    items = [];\n    view = { mode: 'categories', category: '', q: '', page: 1, total: 0, catPage: 1, catPages: 1 };\n    state = 'IDLE';\n    out.outMessage = text('❌ Your order has been cancelled. Send *ORDER* anytime to start a new one.');\n    break;\n  case 'list':\n    out.outMessage = it.mode === 'categories' ? categoriesScreen(it.note) : productListScreen(it.note);\n    break;\n  case 'product':\n    out.outMessage = productScreen();\n    break;\n  case 'setqty': {\n    const qty = Number(it.qty);\n    const p = product;\n    if (!p) { state = 'SELECTING_PRODUCT'; out.outMessage = text('Sorry, that product is no longer available. Send ORDER to browse again.'); break; }\n    if (!(qty >= 0) || qty > MAX_QTY) { state = 'ENTERING_QUANTITY'; currentProductId = p.id; out.outMessage = text('Please send a quantity between 1 and ' + MAX_QTY + '.'); break; }\n    const pos = items.findIndex((i) => String(i.product_id) === String(p.id));\n    let note;\n    if (qty === 0) {\n      if (pos >= 0) items.splice(pos, 1);\n      note = '🗑 Removed *' + p.name + '*.';\n    } else {\n      if (pos < 0 && items.length >= MAX_CART_LINES) { out.outMessage = text('One order can have at most ' + MAX_CART_LINES + ' different products. Send CART to place this order first.'); break; }\n      const line = { product_id: p.id, name: p.name, unit: p.unit || 'Piece', qty: qty, unit_price: Number(p.price || 0), line_total: round2(Number(p.price || 0) * qty) };\n      if (pos >= 0) items[pos] = line; else items.push(line);\n      note = '✅ *' + p.name + '* × ' + qty + ' = ' + money(line.line_total);\n    }\n    out.outMessage = buttons(note + '\\n\\n' + cartLine(),\n      [{ id: 'back', title: '➕ Add more' }, { id: 'cart', title: '🛒 View cart' }, { id: 'menu|1', title: '📂 Categories' }]);\n    state = 'SELECTING_PRODUCT';\n    break;\n  }\n  case 'cart':\n    out.outMessage = cartScreen();\n    break;\n  case 'editcart':\n    out.outMessage = editCartScreen();\n    break;\n  case 'confirm': {\n    if (!items.length) { out.outMessage = cartScreen(); break; }\n    const t = cartTotal();\n    out.action = 'place_order';\n    state = 'IDLE';\n    out.orderItems = items;\n    out.total = t;\n    out.invoiceBody = 'Shop: ' + (ctx.shop_name || '') + (ctx.owner_name ? ' (' + ctx.owner_name + ')' : '') +\n      '\\nPhone: +' + msg.from + (ctx.address ? '\\nAddress: ' + ctx.address : '') + '\\n\\n' +\n      items.map((i, n) => (n + 1) + '. ' + i.name + ' x ' + i.qty + ' @ ' + money(i.unit_price) + ' = ' + money(i.line_total)).join('\\n') +\n      '\\n\\nTotal: ' + money(t);\n    items = [];\n    break;\n  }\n  default:\n    out.outMessage = state === 'IDLE'\n      ? buttons('👋 Hello ' + name + '! Ready to place an order?', [{ id: 'menu|1', title: '🛍 Start order' }])\n      : text('Sorry, I did not get that. Send ORDER to browse, CART to review, or CANCEL.');\n}\n\nout.state = state;\nout.currentProductId = currentProductId;\nout.sessionCart = { items: items, view: view };\nreturn [{ json: out }];\n"
+      },
+      "id": "8cf35058-697b-4911-922b-4797ed322a31",
+      "name": "Decide Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Reply"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "place_order",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Place Order"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7416090c-e73f-4244-a868-db8e7d72878b",
+      "name": "Route by Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1632,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH upd AS (\n  UPDATE whatsapp_sessions\n  SET state = $4, cart = $5::jsonb, phone_number = $3, distributor_id = $2::bigint,\n      current_product_id = NULLIF($7::text, '')::bigint, last_message_id = $6, last_message_at = now(), expires_at = now() + interval '1 day', updated_at = now()\n  WHERE shopkeeper_id = $1::bigint\n  RETURNING id\n)\nINSERT INTO whatsapp_sessions (shopkeeper_id, distributor_id, phone_number, state, cart, current_product_id, last_message_id, last_message_at, expires_at)\nSELECT $1::bigint, $2::bigint, $3, $4, $5::jsonb, NULLIF($7::text, '')::bigint, $6, now(), now() + interval '1 day'\nWHERE $1::bigint IS NOT NULL AND NOT EXISTS (SELECT 1 FROM upd);",
+        "options": {
+          "queryReplacement": "={{ [ $json.shopkeeperId, $json.distributorId, $json.from, $json.state, JSON.stringify($json.sessionCart), $json.messageId, $json.currentProductId == null ? '' : String($json.currentProductId) ] }}"
+        }
+      },
+      "id": "4b869731-0f52-4960-86c0-582a835c77db",
+      "name": "Save Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1968,
+        576
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "YgDroIGVpzWcCiAk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Decide Reply').item.json.phoneNumberId }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Decide Reply').item.json.outMessage) }}",
+        "options": {}
+      },
+      "id": "a9503c99-0a23-4261-8a7d-6823ab202189",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2192,
+        576
+      ],
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hoB0WqXoQfQsEaYa",
+          "name": "WhatsApp account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH o AS (\n  INSERT INTO orders (order_number, shopkeeper_id, distributor_id, status, total_amount, confirmed_at)\n  VALUES ('ORD-' || to_char(now() AT TIME ZONE 'Asia/Kolkata', 'YYMMDD-HH24MISS') || '-' || $1::bigint, $1::bigint, $2::bigint, 'confirmed', $3::numeric, now())\n  RETURNING id, order_number, total_amount\n), items AS (\n  INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, line_total)\n  SELECT o.id, (i->>'product_id')::bigint, i->>'name', (i->>'qty')::numeric, (i->>'unit_price')::numeric, (i->>'line_total')::numeric\n  FROM o, jsonb_array_elements($4::jsonb) i\n  RETURNING id\n), sess AS (\n  UPDATE whatsapp_sessions\n  SET state = 'IDLE', cart = '[]'::jsonb, order_id = (SELECT id FROM o), last_message_id = $5, last_message_at = now(), updated_at = now()\n  WHERE shopkeeper_id = $1::bigint\n  RETURNING id\n)\nSELECT o.id AS order_id, o.order_number, o.total_amount, (SELECT count(*) FROM items) AS item_count FROM o;",
+        "options": {
+          "queryReplacement": "={{ [ $json.shopkeeperId, $json.distributorId, $json.total, JSON.stringify($json.orderItems), $json.messageId ] }}",
+          "largeNumbersOutput": "numbers"
+        }
+      },
+      "id": "92d61a31-b5fa-4fd5-9ad5-610d285479a1",
+      "name": "Create Order",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1968,
+        864
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YgDroIGVpzWcCiAk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('Decide Reply').item.json.phoneNumberId }}",
+        "recipientPhoneNumber": "={{ $('Decide Reply').item.json.from }}",
+        "textBody": "=Thank you for ordering, {{ $('Decide Reply').item.json.ownerName || $('Decide Reply').item.json.shopName }}!\n\nYour order {{ $json.order_number }} for Rs. {{ Number($json.total_amount).toFixed(2) }} has been sent to {{ $('Decide Reply').item.json.distributorName }}.\n\nSend ORDER anytime to place a new order.",
+        "additionalFields": {}
+      },
+      "id": "2c991c17-f168-487a-878a-9d3387331519",
+      "name": "Thank Shopkeeper",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2192,
+        768
+      ],
+      "webhookId": "26a12530-cefa-4809-832d-3bfcf06a1c48",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hoB0WqXoQfQsEaYa",
+          "name": "WhatsApp account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('Decide Reply').item.json.phoneNumberId }}",
+        "recipientPhoneNumber": "={{ $('Decide Reply').item.json.distributorWhatsapp }}",
+        "textBody": "=NEW ORDER INVOICE\nOrder: {{ $json.order_number }}\nDate: {{ $now.setZone('Asia/Kolkata').toFormat('dd LLL yyyy, hh:mm a') }}\n\n{{ $('Decide Reply').item.json.invoiceBody }}",
+        "additionalFields": {}
+      },
+      "id": "5642ad82-90f0-4563-bec4-4525bafe50f6",
+      "name": "Send Invoice to Distributor",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2192,
+        960
+      ],
+      "webhookId": "9be280da-d052-42ce-a6b5-72418dee2992",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hoB0WqXoQfQsEaYa",
+          "name": "WhatsApp account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Meta Verify (GET)": {
+      "main": [
+        [
+          {
+            "node": "Token Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Valid?": {
+      "main": [
+        [
+          {
+            "node": "Return Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Messages (POST)": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge Meta": {
+      "main": [
+        [
+          {
+            "node": "Is Incoming Message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Incoming Message?": {
+      "main": [
+        [
+          {
+            "node": "Extract Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message": {
+      "main": [
+        [
+          {
+            "node": "Load Shopkeeper & Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Shopkeeper & Session": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent": {
+      "main": [
+        [
+          {
+            "node": "Fetch Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Products": {
+      "main": [
+        [
+          {
+            "node": "Decide Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Reply": {
+      "main": [
+        [
+          {
+            "node": "Route by Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Action": {
+      "main": [
+        [
+          {
+            "node": "Save Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Session": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order": {
+      "main": [
+        [
+          {
+            "node": "Thank Shopkeeper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Invoice to Distributor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "3ae6e9b4-619f-4b10-a8aa-d54543792e2d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5678e77a6cc58e730b708a4e0e12b0dc7584ff647d6d8d726649292fa04ee8d2"
+  },
+  "nodeGroups": [
+    {
+      "id": "b59cd623-2100-45d2-859d-f242e6493693",
+      "name": "Verify webhook with Meta",
+      "nodeIds": [
+        "8ed1311b-7367-4da9-8349-b83a74cc4860",
+        "a8bfdf56-776a-49c4-afc5-e7260c091935",
+        "67b227e4-0b2c-47c8-8a27-0d6cf671dace"
+      ],
+      "description": "Checks the verify token Meta sends and echoes back hub.challenge, or rejects with 403"
+    },
+    {
+      "id": "50baa6a9-33f6-4660-8052-4e693e0925b2",
+      "name": "Understand shopkeeper message",
+      "nodeIds": [
+        "92fa3453-04f8-4474-96d4-469a3dfc4ef7",
+        "c58a7e31-88a2-4846-9591-2639b38e200d",
+        "caa20510-77ce-46e1-94e2-3854eee7a4b7",
+        "21895ea1-a37a-450c-ad07-b8fd200abbe5",
+        "eca01de5-1166-4b8a-b731-741a18ae25b8",
+        "26dfe6b5-cc64-4a67-8e1c-a3a81e668b11",
+        "8cf35058-697b-4911-922b-4797ed322a31",
+        "7416090c-e73f-4244-a868-db8e7d72878b"
+      ],
+      "description": "Looks up the sender and their cart, fetches one page of a category or search (max 7), then builds the next screen"
+    },
+    {
+      "id": "e0e03440-45db-4e4a-b7eb-939518be74b9",
+      "name": "Guide shopkeeper",
+      "nodeIds": [
+        "4b869731-0f52-4960-86c0-582a835c77db",
+        "a9503c99-0a23-4261-8a7d-6823ab202189"
+      ],
+      "description": "Remembers the cart and step, then sends tappable category lists, product photo cards or the cart"
+    },
+    {
+      "id": "5e0e84ea-25b0-42f2-8f67-be52bf7cedca",
+      "name": "Place confirmed order",
+      "nodeIds": [
+        "92d61a31-b5fa-4fd5-9ad5-610d285479a1",
+        "2c991c17-f168-487a-878a-9d3387331519",
+        "5642ad82-90f0-4563-bec4-4525bafe50f6"
+      ],
+      "description": "Saves the order and items, thanks the shopkeeper and sends the invoice to their distributor"
+    }
+  ],
+  "id": "QMlleS4fbupijGJR",
+  "tags": []
+}
